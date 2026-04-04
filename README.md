@@ -21,6 +21,7 @@ This repository provides the datasets, R scripts, and methodological workflows u
 
 - Spatial analysis and climate change scenarios (SSP5–RCP8.5)
 [![DOI](https://zenodo.org/badge/1201401663.svg)](https://doi.org/10.5281/zenodo.19422691)
+
 ---
 
 ## 📂 Repository Structure
