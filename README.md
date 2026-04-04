@@ -17,9 +17,10 @@ This repository provides the datasets, R scripts, and methodological workflows u
 - Soil profile characterization  
 - Climate datasets (e.g., CHIRPS, ERA5)  
 - Hydrological modeling (Newhall model)  
-- Statistical validation (Kappa, contingency analysis)  
-- Spatial analysis and climate change scenarios (SSP5–RCP8.5)
+- Statistical validation (Kappa, contingency analysis)
 
+- Spatial analysis and climate change scenarios (SSP5–RCP8.5)
+[![DOI](https://zenodo.org/badge/1201401663.svg)](https://doi.org/10.5281/zenodo.19422691)
 ---
 
 ## 📂 Repository Structure
