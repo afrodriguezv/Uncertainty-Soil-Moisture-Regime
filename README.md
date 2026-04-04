@@ -40,14 +40,6 @@ To reproduce the analysis:
 2. Open R project  
 3. Run scripts in order or execute
 
- ## 📖 Citation
-
-If you use this repository, please cite:
-
-> Rodriguez, A. (2026). *Uncertainty in the Determination and Spatialization of Soil Moisture Regime:  
-A Case Study in the Flat Altillanura Region, Meta, Colombia*. Zenodo.  
-> https://doi.org/10.5281/zenodo.19422691
-
 ---
 
 ## 📬 Contact
