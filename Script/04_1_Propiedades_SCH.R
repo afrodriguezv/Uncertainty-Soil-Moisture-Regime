@@ -28,7 +28,7 @@ calcular_CAD_detallado_completo <- function(df_perfiles) {
       bottom_interseccion = pmin(bottom, limite_inf),
       espesor_interseccion = pmax(0, bottom_interseccion - top_interseccion),
       
-      contribucion_CAD = AWD * espesor_interseccion * 10 ,
+      contribucion_CAD = AWD * BD *  (1 - FR / 100) * espesor_interseccion * 10 ,
       
       porcentaje_horizonte_en_zona = ifelse(bottom - top > 0, 
                                             espesor_interseccion / (bottom - top) * 100, 
@@ -169,7 +169,7 @@ print(perfiles_ejemplo)
 df_tesis <- read.csv("Data/data_prop_pfs.csv", sep=";")
 
 df_htz <- df_tesis %>%
-  select(id, top, bottom, BD, sand, clay, silt, FC, PMP) %>%
+  select(id, top, bottom, BD, sand, clay, silt, FR, FC, PMP) %>%
   rename(ID_perfil = id)
 
 df_htz$AWD <- ( df_htz$FC - df_htz$PMP ) / 100
