@@ -1,7 +1,7 @@
 ############################################################
 # Newhall Model point
 # Input data: Precipitacion , Temperature
-# Output: Newhall results in xml, pdf & database restults csv
+# Output: Newhall results in xml, pdf & database results csv
 ############################################################
 
 library(jNSMR)
@@ -21,7 +21,7 @@ library(extrafont)
 library(grid)
 
 
-# data funtions ###############################################
+# data functions ###############################################
 
 # export to XML (open in jsnm java)
 
@@ -93,12 +93,12 @@ library(grid)
     return(result)
   }
   
-  # Obtener metadatos
+  # Metadata
   metadata_obj <- tryCatch({
     .jcall(dataset, "Lorg/psu/newhall/sim/NewhallDatasetMetadata;", "getMetadata")
   }, error = function(e) NULL)
   
-  # Crear el documento XML raíz
+  # document XML
   doc <- newXMLDoc()
   root <- newXMLNode("model", doc = doc)
   
@@ -108,7 +108,7 @@ library(grid)
   # stninfo
   stninfo <- newXMLNode("stninfo", parent = metadata)
   
-  # Información básica de la estación
+  # Station information
   stnname <- newXMLNode("stnname", 
                         text = .jcall(dataset, "S", "getName"), 
                         parent = stninfo)
@@ -121,7 +121,7 @@ library(grid)
                         text = .jcall(dataset, "S", "getCountry"), 
                         parent = stninfo)
   
-  # Información de metadatos si existe
+  # Metadata information (optional)
   if (!is.null(metadata_obj)) {
     nettype <- newXMLNode("nettype", 
                           text = tryCatch(.jcall(metadata_obj, "S", "getNetwork"), 
@@ -139,7 +139,7 @@ library(grid)
                             parent = stninfo)
   }
   
-  # mlra (si existe)
+  # mlra (Optional)
   if (!is.null(metadata_obj)) {
     mlra <- newXMLNode("mlra", parent = metadata)
     mlraname <- newXMLNode("mlraname", 
@@ -153,7 +153,7 @@ library(grid)
                          parent = mlra)
   }
   
-  # Información del contribuyente (si existe)
+  # Contribuyent information (optional)
   if (!is.null(metadata_obj)) {
     cntinfo <- newXMLNode("cntinfo", parent = metadata)
     cntper <- newXMLNode("cntper", parent = cntinfo)
@@ -184,7 +184,7 @@ library(grid)
                         text = format(Sys.Date(), "%Y%m%d"), 
                         parent = metadata)
   
-  # nsmversion y unidades
+  # nsmversion 
   nsmversion <- newXMLNode("nsmver", text = "1.0", parent = metadata)
   
   srcunitsys <- newXMLNode("srcunitsys", 
@@ -199,7 +199,7 @@ library(grid)
   # location
   location <- newXMLNode("location", parent = input)
   
-  # Obtener latitud con hemisferio
+  # Get Latitude
   lat_val <- .jcall(dataset, "D", "getLatitude")
   ns_hemisphere <- .jcall(dataset, "C", "getNsHemisphere")
   
@@ -209,7 +209,7 @@ library(grid)
     lat_text <- as.character(round_value(lat_val * -1, 4))
   }
   
-  # Obtener longitud con hemisferio
+  # Get Longitude
   lon_val <- .jcall(dataset, "D", "getLongitude")
   ew_hemisphere <- .jcall(dataset, "C", "getEwHemisphere")
   
@@ -223,7 +223,7 @@ library(grid)
   lon <- newXMLNode("lon", text = lon_text, parent = location)
   usercoordfmt <- newXMLNode("usercoordfmt", text = "DD", parent = location)
   
-  # recordpd (período de registro)
+  # record time
   recordpd <- newXMLNode("recordpd", parent = input)
   pdtype <- newXMLNode("pdtype", text = "normal", parent = recordpd)
   pdbegin <- newXMLNode("pdbegin", 
@@ -233,13 +233,13 @@ library(grid)
                       text = as.character(.jcall(dataset, "I", "getEndYear")), 
                       parent = recordpd)
   
-  # precips (precipitación mensual)
+  # precipitation months
   months <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", 
               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
   
   precips <- newXMLNode("precips", parent = input)
   
-  # Obtener datos de precipitación como List
+  #  List Precipitation
   precip_list <- .jcall(dataset, "Ljava/util/List;", "getPrecipitation")
   precip_data <- extractJavaList(precip_list)
   
@@ -248,7 +248,7 @@ library(grid)
   for (i in 1:12) {
     precip_val <- if (i <= length(precip_data)) precip_data[i] else NA
     
-    # Conversión de unidades si es necesario
+    # Conversion units
     if (!is.na(precip_val)) {
       if (to_metric && !is_metric) {
         # Convert inches to mm
@@ -266,17 +266,17 @@ library(grid)
                          parent = precips)
   }
   
-  # airtemps (temperatura mensual)
+  # airtemps (Temperature Months)
   airtemps <- newXMLNode("airtemps", parent = input)
   
-  # Obtener datos de temperatura como List
+  # Temperature List
   temp_list <- .jcall(dataset, "Ljava/util/List;", "getTemperature")
   temp_data <- extractJavaList(temp_list)
   
   for (i in 1:12) {
     temp_val <- if (i <= length(temp_data)) temp_data[i] else NA
     
-    # Conversión de unidades si es necesario
+    # Conversion units
     if (!is.na(temp_val)) {
       if (to_metric && !is_metric) {
         # Convert F to C
@@ -294,12 +294,12 @@ library(grid)
                           parent = airtemps)
   }
   
-  # smcsawc (Water Holding Capacity - de results)
+  # smcsawc (Water Holding Capacity - results)
   smcsawc <- newXMLNode("smcsawc", 
                         text = as.character(.jcall(results, "D", "getWaterHoldingCapacity")), 
                         parent = input)
   
-  # soilairrel (si hay metadatos)
+  # soilairrel (optional)
   if (!is.null(metadata_obj)) {
     soilairrel <- newXMLNode("soilairrel", parent = input)
     
@@ -329,7 +329,7 @@ library(grid)
   # ========== OUTPUT ==========
   output <- newXMLNode("output", parent = root)
   
-  # Clasificaciones
+  # Clasifications
   smrclass <- newXMLNode("smrclass", 
                          text = .jcall(results, "S", "getMoistureRegime"), 
                          parent = output)
@@ -399,7 +399,7 @@ library(grid)
                        text = as.character(.jcall(results, "I", "getMoistDaysAfterWinterSolstice")), 
                        parent = consdays)
   
-  # pets (Evapotranspiración Potencial)
+  # pets (Potentatial Evapotranspiration)
   pets <- newXMLNode("pets", parent = output)
   
   # Obtener PET como List
@@ -517,7 +517,7 @@ library(grid)
     }
   }
   
-  # Guardar el XML
+  # Save XML
   saveXML(doc, file = output_file)
   
   cat("XML exportado exitosamente a:", output_file, "\n")
@@ -590,7 +590,7 @@ library(grid)
       return(result)
     }
     
-    # Obtener datos básicos
+    # Get Basic Data
     station_name <- .jcall(dataset, "S", "getName")
     country <- .jcall(dataset, "S", "getCountry")
     lat <- .jcall(dataset, "D", "getLatitude")
@@ -599,17 +599,17 @@ library(grid)
     start_year <- .jcall(dataset, "I", "getStartYear")
     end_year <- .jcall(dataset, "I", "getEndYear")
     
-    # Obtener datos mensuales
+    # Get Monthly data
     #months <- c("Ene", "Feb", "Mar", "Abr", "May", "Jun","Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
     
     months <- c( "Oct", "Nov", "Dic","Ene", "Feb", "Mar", "Abr", "May", "Jun", 
                 "Jul", "Ago", "Sep")  #change for year combined
     
-    # Precipitación
+    # Precipitation
     precip_list <- .jcall(dataset, "Ljava/util/List;", "getPrecipitation")
     precip_data <- extractJavaList(precip_list)
     
-    # Temperatura
+    # Temperature
     temp_list <- .jcall(dataset, "Ljava/util/List;", "getTemperature")
     temp_data <- extractJavaList(temp_list)
     
@@ -620,7 +620,7 @@ library(grid)
     
     pet_data <- if (!is.null(pet_list)) extractJavaList(pet_list) else rep(NA, 12)
     
-    # Calendarios
+    # Calendary
     temp_cal_list <- tryCatch({
       .jcall(results, "Ljava/util/ArrayList;", "getTemperatureCalendar")
     }, error = function(e) NULL)
@@ -633,7 +633,7 @@ library(grid)
     
     moist_cal <- if (!is.null(moist_cal_list)) extractArrayList(moist_cal_list) else rep(NA, 365)
     
-    # Crear dataframe para datos mensuales
+    #  dataframe Montly data
     monthly_data <- data.frame(
       Mes = months,
       Precipitacion = precip_data,
@@ -642,29 +642,29 @@ library(grid)
       stringsAsFactors = FALSE
     )
     
-    # Calcular balance hídrico mensual
+    #  Monthly water balance.
     monthly_data$Balance <- monthly_data$Precipitacion - monthly_data$PET
     
-    # Crear PDF
+    # PDF
     pdf(output_file, width = 11, height = 8.5, paper = "letter")
     
-    # ========== PORTADA ==========
+    # ========== Cover page ==========
     grid.newpage()
     pushViewport(viewport(width = 1, height = 1))
     
     grid.rect(gp = gpar(fill = "white", col = NA))
     
-    # Título principal
+    # title
     grid.text("INFORME DE SIMULACIÓN NEWHALL", 
               x = 0.5, y = 0.8,
               gp = gpar(fontsize = 24, fontface = "bold", fontfamily = "Helvetica"))
     
-    # Subtítulo
+    # Sub title
     grid.text("Modelo de Régimen de Humedad del Suelo", 
               x = 0.5, y = 0.72,
               gp = gpar(fontsize = 12, fontfamily = "Helvetica"))
     
-    # Información de la estación
+    # Station information
     grid.text(paste("Estación:", station_name), 
               x = 0.5, y = 0.6,
               gp = gpar(fontsize = 12, fontfamily = "Helvetica"))
@@ -685,12 +685,12 @@ library(grid)
               x = 0.5, y = 0.4,
               gp = gpar(fontsize = 12, fontfamily = "Helvetica"))
     
-    # Logo o marca de agua
+    # Logo
     grid.text("NEWHALL MODEL v1.0", 
               x = 0.5, y = 0.1,
               gp = gpar(fontsize = 10, col = "gray70", fontfamily = "Helvetica"))
     
-    # ========== RESUMEN EJECUTIVO ==========
+    # ========== Executive Summary ==========
     grid.newpage()
     pushViewport(viewport(width = 1, height = 1, x = 0.5, y = 0.5))
     
@@ -699,7 +699,7 @@ library(grid)
               just = "left",
               gp = gpar(fontsize = 14, fontface = "bold", fontfamily = "Helvetica"))
     
-    # Obtener resultados principales
+    # Results 
     moisture_regime <- .jcall(results, "S", "getMoistureRegime")
     temperature_regime <- .jcall(results, "S", "getTemperatureRegime")
     annual_rainfall <- .jcall(results, "D", "getAnnualRainfall")
@@ -728,7 +728,7 @@ library(grid)
       )
     )
     
-    # Dibujar tabla
+    # Draw Table
     y_pos <- 0.8
     for (i in 1:nrow(summary_data)) {
       grid.text(summary_data$Parámetro[i], 
@@ -744,7 +744,7 @@ library(grid)
       y_pos <- y_pos - 0.05
     }
     
-    # Interpretación
+    # Interpretation
     grid.text("INTERPRETACIÓN:", 
               x = 0, y = 0.35,
               just = "left",
@@ -764,10 +764,10 @@ library(grid)
               gp = gpar(fontsize = 10, fontfamily = "Helvetica", lineheight = 1.2),
               hjust = 0, vjust = 1)
     
-    # ========== DATOS MENSUALES ==========
+    # ========== Months Data ==========
     grid.newpage()
     
-    # Título
+    # Title
     grid.text("DATOS CLIMÁTICOS MENSUALES", 
               x = 0.5, y = 0.95,
               gp = gpar(fontsize = 18, fontface = "bold", fontfamily = "Helvetica"))
@@ -800,7 +800,7 @@ library(grid)
       y_pos <- y_pos - 0.04
     }
     
-    # Totales anuales
+    # Totals yearly
     y_pos <- y_pos - 0.04
     grid.text("ANUAL", x = 0.15, y = y_pos, gp = gpar(fontsize = 10, fontface = "bold"))
     grid.text(round(sum(monthly_data$Precipitacion, na.rm = TRUE), 1), 
@@ -816,8 +816,8 @@ library(grid)
               x = 0.75, y = y_pos, 
               gp = gpar(fontsize = 10, fontface = "bold", col = balance_color))
     
-    # ========== GRÁFICOS ==========
-    # Gráfico 1: Precipitación y Temperatura
+    # ========== GRAPHIC ==========
+    # Gr 1: Precipitation & Temperature
     grid.newpage()
     
     # Crear gráfico con ggplot (necesitamos usar print)
@@ -852,7 +852,7 @@ library(grid)
     
     print(p2, vp = viewport(x = 0.5, y = 0.25, width = 0.9, height = 0.4))
     
-    # ========== INDICADORES DETALLADOS ==========
+    # ========== Indicators ==========
     grid.newpage()
     
     grid.text("RESUMEN DE INDICADORES NEWHALL", 
@@ -910,7 +910,7 @@ library(grid)
       y_pos <- y_pos - 0.025
     }
     
-    # ========== RECOMENDACIONES ==========
+    # ========== Recommendations (In Constructions) ==========
     grid.newpage()
     
     grid.text("RECOMENDACIONES Y CONSIDERACIONES", 
@@ -994,9 +994,9 @@ stations_soil <- as.data.frame(st_read("Data/vector/sites_9377.shp",quiet = TRUE
   df_schs <- data.frame(
     ID_perfil = c("ARBORADA", "CARIMAGUA", "LALIBERTAD", "MAVALLE", 
                   "NUBES", "SHEEFER", "TALUMA", "VEGAS", "YUCAO"),
-    CAD_SCHS = c(32.46753247, 32.1803457, 28.77061334, 32.46753247,
-                 31.72406648, 32.14008165, 30.80512531, 31.44654088, 
-                 30.86419753)
+    CAD_SCHS = c(50, 50, 50, 50,
+                 50, 50, 50, 50, 
+                 50)
   )
   
   
@@ -1015,7 +1015,7 @@ stations_soil <- as.data.frame(st_read("Data/vector/sites_9377.shp",quiet = TRUE
   
   tmed <- read.csv("Data/clima_T_2023_2024.csv")
 
-  # 10-2023 -- 2024-10 #option 2 ####
+  ## 2023-10 -- 2024-10 #option 2 ####
   ppt <- read.csv("Data/clima_P_2023_2024.csv", sep=";")
   ppt$year <- substr(ppt$periodo,1,4)
   ppt$month <- substr(ppt$periodo,6,7)
@@ -1044,7 +1044,7 @@ stations_soil <- as.data.frame(st_read("Data/vector/sites_9377.shp",quiet = TRUE
 
   # ppt (mm)
   
-    ppt <- read.csv("Data/clima_P_1981_2020.csv", sep = ";")
+  ppt <- read.csv("Data/clima_P_1981_2020.csv", sep = ";")
   names(ppt)[names(ppt) == "var_monthly"] <- "precip_mensual"
   names(ppt)[names(ppt) == "Id"] <- "nombre"
   
@@ -1057,31 +1057,31 @@ stations_soil <- as.data.frame(st_read("Data/vector/sites_9377.shp",quiet = TRUE
   
 # Data configuration ####
   
-  # newhall by year
+  # newhall by year (for normal year, in table put the last year, eg. 1981-2020, year 2020)
   
   # year begin
   
-  pdbegin   = 2023
+  pdbegin   = 2020
   
   # year end 
   
-  pdend     = 2024
+  pdend     = 2020
   
   
-  # for un newhall year combined # 1 for yes, default 0 (eg. 2023_2024)
+  # for Newhall year combined # 1  (eg. 2023_2024, Option 2) for yes, default 0
   
-  year_combined = 1
+  year_combined = 0
   
   
   # available water capacity
   
     # awc for all
   
-    # awc       <- 150  #default 200 
+     awc       <- 200  #default 200 
     
     # awc for sites
     
-     awc <- df_schs$CAD_SCHS
+    # awc <- df_schs$CAD_SCHS
      
   
   # export results to xml: 1:yes, 0: no
@@ -1228,7 +1228,7 @@ for (i in seq_along(stationName)) {
   
 }
   
-# Combinar todos los dataframes en uno solo
+# All Results 
  
 newhall_df <- do.call(rbind, results_list)
 
@@ -1242,9 +1242,9 @@ newhall_df <- do.call(rbind, results_list)
   
   # save results
   
-  write.csv(newhall_df, paste0("newhall_results_awc_mm_xx", year, ".csv"), row.names = FALSE)
+  # write.csv(newhall_df, paste0("newhall_results_awc_mm_xx", year, ".csv"), row.names = FALSE)
   
-  cat(paste0("newhall_results_awc_", year, ".csv\n"))
+  # cat(paste0("newhall_results_awc_", year, ".csv\n"))
   
   
 
